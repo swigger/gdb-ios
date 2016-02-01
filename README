@@ -45,3 +45,17 @@ GNU General Public License terms under which you can copy the files.
 
 REPORTING BUGS: Again, see gdb/README, binutils/README, etc., for info
 on where and how to report problems.
+
+
+      swigger's notes on this fork
+
+This project provides basic gdb support on 64bits jailbroken iOS (arm64 or aarch64).
+
+How to make:
+	./configure --host=aarch64-arm-darwin
+	make
+
+You should provide a toolchain named aarch64-arm-darwin-{gcc,ar}, this can be shell scripts
+calls clang -arch arm64 -isysroot iphone.sdk.path -I other/path/for/header/fixes.
+
+Tested on my jail borken iPhone 5s which runs iOS 8.4 .
