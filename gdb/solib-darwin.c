@@ -542,6 +542,7 @@ darwin_solib_read_all_image_info_addr (struct darwin_info *info)
 }
 
 /* Shared library startup support.  See documentation in solib-svr4.c.  */
+void (*darwin_adjust_image_notifier) (uint64_t * notifier) = 0;
 
 static void
 darwin_solib_create_inferior_hook (int from_tty)
@@ -596,6 +597,26 @@ darwin_solib_create_inferior_hook (int from_tty)
       /* Relocate.  */
       if (vmaddr != load_addr)
 	objfile_rebase (symfile_objfile, load_addr - vmaddr);
+    }
+}
+
+void darwin_rebase_objfile(void)
+{
+  // relocate main executable.
+  struct darwin_info *info = get_darwin_info ();
+  darwin_load_image_infos (info);
+
+  CORE_ADDR load_addr = darwin_read_exec_load_addr_from_dyld (info);
+  if (load_addr != 0 && symfile_objfile != NULL)
+    {
+      CORE_ADDR vmaddr;
+
+      /* Find the base address of the executable.  */
+      vmaddr = bfd_mach_o_get_base_address (exec_bfd);
+
+      /* Relocate.  */
+      if (vmaddr != load_addr)
+        objfile_rebase (symfile_objfile, load_addr - vmaddr);
     }
 }
 

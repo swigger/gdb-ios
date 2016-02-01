@@ -24,5 +24,6 @@ struct objfile;
 struct target_so_ops;
 
 extern struct target_so_ops darwin_so_ops;
+extern void darwin_rebase_objfile(void);
 
 #endif /* solib-darwin.h */

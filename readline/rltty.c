@@ -41,6 +41,10 @@
 #  include <sys/ioctl.h>
 #endif /* GWINSZ_IN_SYS_IOCTL */
 
+#if defined(__APPLE__)
+#include <sys/ioctl.h>
+#endif
+
 #include "rltty.h"
 #include "readline.h"
 #include "rlprivate.h"

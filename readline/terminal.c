@@ -55,6 +55,10 @@
 #  include <sys/ioctl.h>
 #endif /* GWINSZ_IN_SYS_IOCTL && !TIOCGWINSZ */
 
+#if defined(__APPLE__)
+#include <sys/ioctl.h>
+#endif
+
 #ifdef __MSDOS__
 # include <pc.h>
 #endif

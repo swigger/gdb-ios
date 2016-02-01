@@ -742,6 +742,10 @@ darwin_resume_thread (struct inferior *inf, darwin_thread_t *thread,
 	  thread->signaled = 1;
 	}
 
+#if defined(__arm__) || defined(__arm64__)
+      //FIXME: on IOS, it seems the single step flag will lost.
+      thread->single_step = 0;
+#endif
       /* Set or reset single step.  */
       inferior_debug (4, _("darwin_set_sstep (thread=0x%x, enable=%d)\n"),
 		      thread->gdb_port, step);
@@ -2160,13 +2164,8 @@ _initialize_darwin_inferior (void)
   gdb_task = mach_task_self ();
   darwin_host_self = mach_host_self ();
 
-  /* Read page size.  */
-  kret = host_page_size (darwin_host_self, &mach_page_size);
-  if (kret != KERN_SUCCESS)
-    {
-      mach_page_size = 0x1000;
-      MACH_CHECK_ERROR (kret);
-    }
+  /* Read page size. the host_page_size function report an invalid page size for iOS  */
+  mach_page_size = getpagesize();
 
   darwin_ops = inf_child_target ();
 
