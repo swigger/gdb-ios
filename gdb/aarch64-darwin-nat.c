@@ -100,6 +100,26 @@ static void aarch64_darwin_fetch_inferior_registers(struct target_ops *ops, stru
 			regcache_raw_supply (regcache, regno, NULL);
 		}
 	}
+	{
+		arm_neon_state64_t fpregs;
+		unsigned int fpcnt = ARM_NEON_STATE64_COUNT;
+		ret = thread_get_state(current_thread, ARM_NEON_STATE64, (thread_state_t)&fpregs, &fpcnt);
+		if (ret == KERN_SUCCESS)
+		{
+			for (i=AARCH64_V0_REGNUM; i<=AARCH64_V31_REGNUM; ++i)
+				regcache_raw_supply(regcache, i, (char*) &fpregs.__v[i-AARCH64_V0_REGNUM]);
+			regcache_raw_supply(regcache, AARCH64_FPSR_REGNUM, (char*) & fpregs.__fpsr);
+			regcache_raw_supply(regcache, AARCH64_FPCR_REGNUM, (char*) & fpregs.__fpcr);
+		}
+		else
+		{
+			printf_unfiltered (_("Error calling thread_get_state for FP registers for thread 0x%lx\n"),
+					(unsigned long) current_thread);
+			MACH_CHECK_ERROR (ret);
+			warning (_("unknown register %d"), regno);
+			regcache_raw_supply (regcache, regno, NULL);
+		}
+	}
 }
 
 static void aarch64_darwin_store_inferior_registers (struct target_ops *ops, struct regcache *regcache, int regno)
@@ -133,13 +153,33 @@ static void aarch64_darwin_store_inferior_registers (struct target_ops *ops, str
 		ret = thread_set_state (current_thread, ARM_THREAD_STATE64, (thread_state_t) &gp_regs, gp_count);
 		MACH_CHECK_ERROR(ret);
 	}
+	{
+		arm_neon_state64_t fpregs;
+		unsigned int fpcnt = ARM_NEON_STATE64_COUNT;
+		ret = thread_get_state(current_thread, ARM_NEON_STATE64, (thread_state_t)&fpregs, &fpcnt);
+		MACH_CHECK_ERROR(ret);
+		gdb_assert (fpcnt == ARM_NEON_STATE64_COUNT);
+		if (ret == KERN_SUCCESS)
+		{
+			for (i=AARCH64_V0_REGNUM; i<=AARCH64_V31_REGNUM; ++i)
+			{
+				if (regno == -1 || regno == i)
+					regcache_raw_collect(regcache, i, (char*) &fpregs.__v[i-AARCH64_V0_REGNUM]);
+			}
+			if (regno==-1 || regno == AARCH64_FPSR_REGNUM)
+				regcache_raw_collect(regcache, AARCH64_FPSR_REGNUM, (char*) & fpregs.__fpsr);
+			if (regno==-1 || regno == AARCH64_FPSR_REGNUM)
+				regcache_raw_collect(regcache, AARCH64_FPCR_REGNUM, (char*) & fpregs.__fpcr);
+
+			ret = thread_set_state(current_thread, ARM_NEON_STATE64, (thread_state_t)&fpregs, &fpcnt);
+			MACH_CHECK_ERROR(ret);
+		}
+	}
 }
 
 /* Support for debug registers, boosted mostly from i386-linux-nat.c.  */
 void darwin_complete_target (struct target_ops *target)
 {
-	//amd64_native_gregset64_reg_offset = amd64_darwin_thread_state_reg_offset;
-	//x86_use_watchpoints (target);
 	target->to_fetch_registers = aarch64_darwin_fetch_inferior_registers;
 	target->to_store_registers = aarch64_darwin_store_inferior_registers;
 }

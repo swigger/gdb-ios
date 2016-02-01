@@ -28,7 +28,6 @@
 #include "solist.h"
 
 #include <mach/mach.h>
-extern void darwin_rebase_objfile(void);
 
 /*
  * GDB is killing me!
@@ -287,48 +286,6 @@ static CORE_ADDR aarch64_darwin_skip_prologue (struct gdbarch *gdbarch, CORE_ADD
 	return pc;
 }
 
-struct darwin_dyld_metric
-{
-	uint64_t base, size, origbase;
-};
-
-typedef void * darwin_delayed_b;
-DEF_VEC_P(darwin_delayed_b);   // non-managed tree vector.
-static VEC(darwin_delayed_b) * darwin_delayed_bs;      // A (pointer to) a vector of tree pointers.
-
-static int darwin_delay_bps(struct breakpoint * bp, void * dm0)
-{
-	struct darwin_dyld_metric * dm = (struct darwin_dyld_metric*)dm0;
-	if (is_watchpoint(bp))
-		return 0;
-	if (bp->loc == 0)
-		return 0;
-	if (bp->loc->address > dm->base && bp->loc->address < dm->base + dm->size)
-		return 0;
-	disable_breakpoint(bp);
-	VEC_safe_push(darwin_delayed_b, darwin_delayed_bs, bp);
-	return 0;
-}
-
-static int darwin_resume_bps(struct breakpoint * bp, void * v)
-{
-	int ix;
-	void * b_;
-	if (is_watchpoint(bp) || bp->loc == 0) return 0;
-	for (ix = 0; VEC_iterate(darwin_delayed_b, darwin_delayed_bs, ix, b_); ix++)
-	{
-		if (b_ == bp)
-			enable_breakpoint(bp);
-	}
-}
-
-static void darwin_handle_so_event()
-{
-	darwin_rebase_objfile();
-	iterate_over_breakpoints(darwin_resume_bps, 0);
-	darwin_delayed_bs->num = 0;
-}
-
 static void aarch64_darwin_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
 {
 	static const char *const stap_integer_prefixes[] = { "#", "", NULL };
@@ -362,7 +319,6 @@ static void aarch64_darwin_init_abi (struct gdbarch_info info, struct gdbarch *g
 	/* TODO: Syscall record.  */
 	// tdep->aarch64_syscall_record = aarch64_darwin_syscall_record;
 
-	darwin_so_ops.handle_event = darwin_handle_so_event;
 	set_solib_ops (gdbarch, &darwin_so_ops);
 }
 
@@ -376,6 +332,11 @@ static enum gdb_osabi aarch64_mach_o_osabi_sniffer (bfd *abfd)
 
     return GDB_OSABI_UNKNOWN;
 }
+
+struct darwin_dyld_metric
+{
+	uint64_t base, size, origbase;
+};
 
 static kern_return_t find_dyld_metric(uint64_t hintaddr, uint64_t * base, uint64_t * textsize, uint64_t * origbase)
 {
@@ -445,11 +406,6 @@ static void darwin_adjust_image_notifier_(uint64_t * notifier)
 
 	find_dyld_metric(pc, &dm.base, &dm.size, &dm.origbase);
     *notifier = *notifier - dm.origbase + dm.base;
-
-    // also do some dirty work here.
-    // On IOS, it seems ASLR can't be disabled.
-    // So all the break points should be disabled.
-    iterate_over_breakpoints (darwin_delay_bps, &dm);
 }
 
 extern initialize_file_ftype _initialize_aarch64_darwin_tdep;

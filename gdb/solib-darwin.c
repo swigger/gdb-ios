@@ -570,6 +570,10 @@ darwin_solib_create_inferior_hook (int from_tty)
 
   /* Add the breakpoint which is hit by dyld when the list of solib is
      modified.  */
+  /* On iOS, info->all_image.notifier is not the real address since ASLR exists.
+   It's the old address. so we fix it. */
+  if (darwin_adjust_image_notifier)
+      (*darwin_adjust_image_notifier)(& info->all_image.notifier);
   create_solib_event_breakpoint (target_gdbarch (), info->all_image.notifier);
 
   if (info->all_image.count != 0)
