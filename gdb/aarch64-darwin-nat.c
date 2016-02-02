@@ -183,3 +183,11 @@ void darwin_complete_target (struct target_ops *target)
 	target->to_fetch_registers = aarch64_darwin_fetch_inferior_registers;
 	target->to_store_registers = aarch64_darwin_store_inferior_registers;
 }
+
+extern initialize_file_ftype _initialize_aarch64_darwin_nat;
+
+void //note: _initialize_ must at begin of line.
+_initialize_aarch64_darwin_nat (void)
+{
+	startup_with_shell = 0;
+}

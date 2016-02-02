@@ -1022,9 +1022,10 @@ darwin_decode_message (mach_msg_header_t *hdr,
 
 	      inferior_debug (4, _("darwin_wait: pid=%d exit, status=0x%x\n"),
 			      res, wstatus);
-
+#if !defined(__arm__) && !defined(__arm64__)
 	      /* Looks necessary on Leopard and harmless...  */
 	      wait4 (inf->pid, &wstatus, 0, NULL);
+#endif
 
 	      return ptid_build (inf->pid, 0, 0);
 	    }
