@@ -405,7 +405,12 @@ static void darwin_adjust_image_notifier_(uint64_t * notifier)
 	gdb_assert(notifier != 0);
 
 	find_dyld_metric(pc, &dm.base, &dm.size, &dm.origbase);
-    *notifier = *notifier - dm.origbase + dm.base;
+	*notifier = *notifier - dm.origbase + dm.base;
+
+	//set a break point at first location.
+	char pos[32];
+	sprintf(pos, "*%#llx\n", (long long)pc);
+	tbreak_command(pos, 0);
 }
 
 extern initialize_file_ftype _initialize_aarch64_darwin_tdep;
