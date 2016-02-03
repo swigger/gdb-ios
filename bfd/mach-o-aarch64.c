@@ -40,9 +40,50 @@
 #define bfd_mach_o_tgt_seg_table NULL
 #define bfd_mach_o_section_type_valid_for_tgt NULL
 
+/* this patch is tricky and dirty. */
+struct fat_arch {
+	int cputype;	/* cpu specifier (int) */
+	int cpusubtype;	/* machine specifier (int) */
+	uint32_t	offset;		/* file offset to this object file */
+	uint32_t	size;		/* size of this object file */
+	uint32_t	align;		/* alignment as a power of 2 */
+};
+
+static file_ptr find_hdroff(bfd * abfd)
+{
+	char data[4096];
+	unsigned int i, narch;
+	struct fat_arch * fa;
+	if (bfd_bread(data, sizeof(data), abfd) == sizeof(data))
+	{
+		if (ntohl(*(unsigned int*)data) == 0xcafebabe)
+		{
+			narch = ntohl( ((unsigned int*)data) [1]);
+			if (narch>10) narch = 10;
+			for (i = 0; i<narch; ++i)
+			{
+				fa = (struct fat_arch*)( data + 8 + i*sizeof(struct fat_arch));
+				if (ntohl(fa->cputype) == BFD_MACH_O_CPU_TYPE_ARM64)
+					return ntohl(fa->offset);
+			}
+		}
+	}
+	//      if (bfd_seek (abfd, (file_ptr) 0, SEEK_SET) != 0) /* rewind! */
+	return 0;
+}
+
 static const bfd_target *
 bfd_mach_o_arm64_object_p (bfd *abfd)
 {
+  file_ptr p = find_hdroff(abfd);
+  if (p>0)
+  {
+	abfd->my_archive = bfd_create(abfd->filename, abfd);
+	abfd->origin = p;
+	//gdb_bfd_ref(abfd->my_archive);
+	//gdb_bfd_mark_parent(abfd, abfd->my_archive);
+	//gdb_bfd_unref(abfd->my_archive);
+  }
   return bfd_mach_o_header_p (abfd, 0, 0, BFD_MACH_O_CPU_TYPE_ARM64);
 }
 
