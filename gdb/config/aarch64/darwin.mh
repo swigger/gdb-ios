@@ -1,0 +1,3 @@
+# Host: IA86 running Darwin
+
+NATDEPFILES = fork-child.o darwin-nat.o aarch64-darwin-nat.o darwin-nat-info.o aarch64-tdep.o
