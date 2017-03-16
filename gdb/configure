@@ -14297,8 +14297,8 @@ if test "$enable_build_with_cxx" = "yes"; then
 -Wno-narrowing"
 else
    build_warnings="$build_warnings -Wpointer-sign -Wmissing-prototypes \
--Wdeclaration-after-statement -Wmissing-parameter-type \
--Wold-style-declaration -Wold-style-definition"
+-Wdeclaration-after-statement  \
+ -Wold-style-definition"
 fi
 
 # Enable -Wno-format by default when using gcc on mingw since many

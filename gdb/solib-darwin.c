@@ -313,6 +313,7 @@ darwin_current_sos (void)
       strcpy (newobj->so_original_name, newobj->so_name);
       xfree (file_path);
       newobj->lm_info->lm_addr = load_addr;
+	  newobj->addr_low = load_addr;
 
       if (head == NULL)
 	head = newobj;

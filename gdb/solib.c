@@ -1115,7 +1115,7 @@ info_sharedlibrary_command (char *pattern, int from_tty)
 
       lib_cleanup = make_cleanup_ui_out_tuple_begin_end (uiout, "lib");
 
-      if (so->addr_high != 0)
+      if (so->addr_low != 0)
 	{
 	  ui_out_field_core_addr (uiout, "from", gdbarch, so->addr_low);
 	  ui_out_field_core_addr (uiout, "to", gdbarch, so->addr_high);

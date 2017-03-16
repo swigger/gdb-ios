@@ -168,10 +168,10 @@ static void aarch64_darwin_store_inferior_registers (struct target_ops *ops, str
 			}
 			if (regno==-1 || regno == AARCH64_FPSR_REGNUM)
 				regcache_raw_collect(regcache, AARCH64_FPSR_REGNUM, (char*) & fpregs.__fpsr);
-			if (regno==-1 || regno == AARCH64_FPSR_REGNUM)
+			if (regno==-1 || regno == AARCH64_FPCR_REGNUM)
 				regcache_raw_collect(regcache, AARCH64_FPCR_REGNUM, (char*) & fpregs.__fpcr);
 
-			ret = thread_set_state(current_thread, ARM_NEON_STATE64, (thread_state_t)&fpregs, &fpcnt);
+			ret = thread_set_state(current_thread, ARM_NEON_STATE64, (thread_state_t)&fpregs, fpcnt);
 			MACH_CHECK_ERROR(ret);
 		}
 	}
